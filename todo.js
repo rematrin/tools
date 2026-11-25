@@ -20704,6 +20704,13 @@ try {
 }
 let gcalEventsPerCalendarCache = new Map();
 
+function getCalendarTaskTitle(title) {
+    if (!title) return '';
+    if (title.startsWith('* ')) return title.slice(2);
+    if (title.startsWith('*')) return title.slice(1).trimStart();
+    return title;
+}
+
 function formatIsoDate(dateObj) {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -21441,13 +21448,15 @@ function renderMonthView(container, tasks, gcalEvents, range) {
             const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
             const projColor = project ? project.color : '#4285f4';
 
+            const isNote = task.title && (task.title.startsWith('* ') || task.title.startsWith('*'));
             const item = document.createElement('div');
-            item.className = `cal-item${task.completed ? ' completed' : ''}`;
+            item.className = `cal-item${task.completed ? ' completed' : ''}${isNote ? ' cal-item-note' : ''}`;
             item.style.borderLeftColor = projColor;
+            item.title = getCalendarTaskTitle(task.title);
 
             const title = document.createElement('span');
             title.className = 'cal-item-title';
-            title.textContent = task.title;
+            title.textContent = getCalendarTaskTitle(task.title);
 
             if (task.dueTime) {
                 const timeSpan = document.createElement('span');
@@ -21574,21 +21583,27 @@ function renderWeekView(container, tasks, gcalEvents, range) {
             const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
             const projColor = project ? project.color : '#4285f4';
 
+            const isNote = task.title && (task.title.startsWith('* ') || task.title.startsWith('*'));
             const item = document.createElement('div');
-            item.className = `cal-item${task.completed ? ' completed' : ''}`;
+            item.className = `cal-item${task.completed ? ' completed' : ''}${isNote ? ' cal-item-note' : ''}`;
             item.style.borderLeftColor = projColor;
+            item.title = getCalendarTaskTitle(task.title);
 
             const chk = document.createElement('div');
             chk.className = 'cal-item-checkbox';
-            chk.onclick = (e) => {
-                e.stopPropagation();
-                toggleTaskCompleted(task.id, task.completed);
-                renderCalendarView();
-            };
+            if (isNote) {
+                chk.style.display = 'none';
+            } else {
+                chk.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleTaskCompleted(task.id, task.completed);
+                    renderCalendarView();
+                };
+            }
 
             const title = document.createElement('span');
             title.className = 'cal-item-title';
-            title.textContent = task.title;
+            title.textContent = getCalendarTaskTitle(task.title);
 
             item.appendChild(chk);
             item.appendChild(title);
@@ -21670,15 +21685,17 @@ function renderWeekView(container, tasks, gcalEvents, range) {
             const min = parseInt(parts[1], 10) || 0;
 
             const topPx = hour * 50 + (min / 60) * 50;
+            const isNote = task.title && (task.title.startsWith('* ') || task.title.startsWith('*'));
             const item = document.createElement('div');
-            item.className = `cal-timed-item${task.completed ? ' completed' : ''}`;
+            item.className = `cal-timed-item${task.completed ? ' completed' : ''}${isNote ? ' cal-item-note' : ''}`;
             item.style.top = `${topPx}px`;
             item.style.height = '42px';
             item.style.borderLeftColor = projColor;
+            item.title = getCalendarTaskTitle(task.title);
 
             item.innerHTML = `
                 <div style="font-weight: 700; font-size: 10px;">${task.dueTime}</div>
-                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${task.completed ? 'text-decoration: line-through;' : ''}">${task.title}</div>
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${task.completed ? 'text-decoration: line-through;' : ''}">${escapeHtml(getCalendarTaskTitle(task.title))}</div>
             `;
             item.onclick = (e) => {
                 e.stopPropagation();
@@ -22066,21 +22083,27 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
             openCalendarTaskContextMenu(task, e);
         });
 
+        const isNote = task.title && (task.title.startsWith('* ') || task.title.startsWith('*'));
         const chk = document.createElement('div');
         chk.className = 'cal-item-checkbox';
-        chk.onclick = async (e) => {
-            e.stopPropagation();
-            await toggleTaskCompleted(task.id, task.completed);
-            if (typeof options.onTaskToggled === 'function') {
-                options.onTaskToggled();
-            } else {
-                renderCalendarView();
-            }
-        };
+        if (isNote) {
+            chk.style.display = 'none';
+        } else {
+            chk.onclick = async (e) => {
+                e.stopPropagation();
+                await toggleTaskCompleted(task.id, task.completed);
+                if (typeof options.onTaskToggled === 'function') {
+                    options.onTaskToggled();
+                } else {
+                    renderCalendarView();
+                }
+            };
+        }
 
         const title = document.createElement('span');
         title.className = 'cal-item-title';
-        title.textContent = task.title;
+        title.textContent = getCalendarTaskTitle(task.title);
+        item.title = getCalendarTaskTitle(task.title);
 
         item.appendChild(chk);
         item.appendChild(title);
@@ -22310,7 +22333,7 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
             <div class="cal-resize-handle cal-resize-handle-top" aria-label="Изменить время начала"></div>
             <div class="cal-timed-item-content">
                 <span class="cal-timed-item-time">${task.dueTime}${task.dueEndTime ? `–${task.dueEndTime}` : ''}</span>
-                <span class="cal-timed-item-title" style="${task.completed ? 'text-decoration: line-through;' : ''}">${escapeHtml(task.title)}</span>
+                <span class="cal-timed-item-title" style="${task.completed ? 'text-decoration: line-through;' : ''}">${escapeHtml(getCalendarTaskTitle(task.title))}</span>
                 ${project ? `<span class="cal-timed-item-project">${escapeHtml(project.name)}</span>` : ''}
             </div>
             <div class="cal-resize-handle cal-resize-handle-bottom" aria-label="Изменить время окончания"></div>

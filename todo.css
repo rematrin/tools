@@ -10827,6 +10827,10 @@ input:checked+.view-slider:before {
     background: rgba(0, 0, 0, 0.04);
 }
 
+body.dark .cal-filter-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 .cal-filter-checkbox {
     width: 16px;
     height: 16px;
@@ -10840,6 +10844,89 @@ input:checked+.view-slider:before {
     font-weight: 700;
     line-height: 1;
     transition: all 0.15s ease;
+}
+
+/* Expandable Google Calendar filters group */
+.cal-filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.cal-gcal-header {
+    position: relative;
+    cursor: pointer;
+}
+
+.cal-filter-chevron-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 4px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.cal-filter-chevron-btn:hover {
+    color: var(--text-primary);
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+body.dark .cal-filter-chevron-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.cal-filter-chevron-btn svg {
+    transition: transform 0.2s ease;
+}
+
+.cal-filter-chevron-btn.collapsed svg {
+    transform: rotate(-90deg);
+}
+
+.cal-gcal-sublist {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-left: 14px;
+    padding-left: 10px;
+    border-left: 1.5px solid var(--border, rgba(0, 0, 0, 0.1));
+    margin-top: 2px;
+    margin-bottom: 4px;
+}
+
+.cal-sub-filter-item {
+    padding: 4px 6px !important;
+    font-size: 12px !important;
+}
+
+.cal-sub-filter-item .cal-filter-checkbox {
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 9.5px !important;
+    border-radius: 3.5px !important;
+}
+
+.cal-sub-filter-item .cal-filter-label {
+    font-size: 12px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cal-sub-filter-msg {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    padding: 4px 6px;
+    font-style: italic;
 }
 
 /* Sticky Header & All-Day Section */

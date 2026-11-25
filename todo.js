@@ -15724,6 +15724,11 @@ function renderGCalCalendarsList(calendars) {
     if (!container) return;
     container.innerHTML = '';
 
+    if (calendars && calendars.length > 0) {
+        gcalUserCalendars = calendars;
+        try { localStorage.setItem('gcal_user_calendars_cache', JSON.stringify(calendars)); } catch (e) {}
+    }
+
     if (!calendars || calendars.length === 0) {
         container.innerHTML = '<div style="font-size:0.85rem; color:var(--text-secondary); padding:8px 0;">Календари не найдены</div>';
         return;
@@ -20691,6 +20696,13 @@ let calendarGCalLastRangeKey = '';
 let calendarGCalIsFetching = false;
 let calendarRenderCounter = 0;
 let todayCalendarRenderCounter = 0;
+let gcalUserCalendars = [];
+try {
+    gcalUserCalendars = JSON.parse(localStorage.getItem('gcal_user_calendars_cache')) || [];
+} catch (e) {
+    gcalUserCalendars = [];
+}
+let gcalEventsPerCalendarCache = new Map();
 
 function formatIsoDate(dateObj) {
     const y = dateObj.getFullYear();
@@ -20747,7 +20759,11 @@ function getRangeForCalendarView(view, date) {
 
 async function fetchCalendarGCalEvents(start, end) {
     if (typeof window.GCalendarService === 'undefined') return [];
-    const rangeKey = `${start.toISOString()}_${end.toISOString()}`;
+    const token = localStorage.getItem('google_calendar_access_token');
+    if (!token) return [];
+
+    const hiddenCals = (typeof gcalHiddenCalendars !== 'undefined') ? gcalHiddenCalendars : [];
+    const rangeKey = `${start.toISOString()}_${end.toISOString()}_${hiddenCals.slice().sort().join(',')}`;
     if (calendarGCalLastRangeKey === rangeKey && calendarGCalEvents.length > 0) {
         return calendarGCalEvents;
     }
@@ -20755,15 +20771,35 @@ async function fetchCalendarGCalEvents(start, end) {
 
     calendarGCalIsFetching = true;
     try {
-        const calendars = await window.GCalendarService.fetchCalendars(false);
-        const hiddenCals = (typeof gcalHiddenCalendars !== 'undefined') ? gcalHiddenCalendars : [];
-        const visibleCals = calendars.filter(c => !hiddenCals.includes(c.id));
-        if (visibleCals.length === 0) {
+        let calendars = gcalUserCalendars;
+        if (!calendars || calendars.length === 0) {
+            calendars = await window.GCalendarService.fetchCalendars(false);
+            if (calendars && calendars.length > 0) {
+                gcalUserCalendars = calendars;
+                try {
+                    localStorage.setItem('gcal_user_calendars_cache', JSON.stringify(calendars));
+                } catch (e) {}
+            }
+        }
+        if (!calendars || calendars.length === 0) {
             calendarGCalEvents = [];
+            calendarGCalLastRangeKey = rangeKey;
             return [];
         }
 
+        const visibleCals = calendars.filter(c => !hiddenCals.includes(c.id));
+        if (visibleCals.length === 0) {
+            calendarGCalEvents = [];
+            calendarGCalLastRangeKey = rangeKey;
+            return [];
+        }
+
+        const dateRangeKey = `${start.toISOString()}_${end.toISOString()}`;
         const fetchPromises = visibleCals.map(async (cal) => {
+            const calCacheKey = `${cal.id}_${dateRangeKey}`;
+            if (gcalEventsPerCalendarCache.has(calCacheKey)) {
+                return gcalEventsPerCalendarCache.get(calCacheKey);
+            }
             try {
                 const events = await window.GCalendarService.fetchEventsForRange(
                     cal.id,
@@ -20771,11 +20807,14 @@ async function fetchCalendarGCalEvents(start, end) {
                     end.toISOString(),
                     false
                 );
-                return events.map(e => ({
+                const mappedEvents = events.map(e => ({
                     ...e,
+                    calendarId: cal.id,
                     calendarColor: cal.backgroundColor || '#4285F4',
                     calendarName: cal.summary
                 }));
+                gcalEventsPerCalendarCache.set(calCacheKey, mappedEvents);
+                return mappedEvents;
             } catch (err) {
                 return [];
             }
@@ -20979,9 +21018,70 @@ function renderCalendarProjectFilters() {
         renderCalendarView();
     }));
 
-    // Item: Google Календарь (Before Inbox)
-    const isGCalChecked = isAllChecked || calendarSelectedProjects.has('gcal');
-    listEl.appendChild(createFilterItem('Google Календарь', '#4285f4', isGCalChecked, () => {
+    // Item: Google Календарь (Expandable dropdown with individual calendars)
+    const hasGCalToken = !!localStorage.getItem('google_calendar_access_token');
+    const hiddenCals = (typeof gcalHiddenCalendars !== 'undefined') ? gcalHiddenCalendars : [];
+
+    // Trigger async fetch of calendars if token exists and not loaded yet
+    if (hasGCalToken && (!gcalUserCalendars || gcalUserCalendars.length === 0)) {
+        if (window.GCalendarService && typeof window.GCalendarService.fetchCalendars === 'function' && !window._gcalCalendarsFetching) {
+            window._gcalCalendarsFetching = true;
+            window.GCalendarService.fetchCalendars(false).then(cals => {
+                window._gcalCalendarsFetching = false;
+                if (cals && cals.length > 0) {
+                    gcalUserCalendars = cals;
+                    try { localStorage.setItem('gcal_user_calendars_cache', JSON.stringify(cals)); } catch (e) {}
+                    renderCalendarProjectFilters();
+                }
+            }).catch(() => {
+                window._gcalCalendarsFetching = false;
+            });
+        }
+    }
+
+    const hasVisibleSubCal = gcalUserCalendars.length === 0 || gcalUserCalendars.some(c => !hiddenCals.includes(c.id));
+    const isGCalChecked = (isAllChecked || calendarSelectedProjects.has('gcal')) && hasVisibleSubCal;
+    let isGCalExpanded = localStorage.getItem('todo_cal_gcal_expanded') === 'true';
+
+    const gcalGroup = document.createElement('div');
+    gcalGroup.className = 'cal-filter-group cal-gcal-filter-group';
+
+    const gcalHeader = document.createElement('div');
+    gcalHeader.className = `cal-filter-item cal-gcal-header${isGCalChecked ? ' checked' : ''}`;
+
+    const gcalChk = document.createElement('div');
+    gcalChk.className = 'cal-filter-checkbox';
+    gcalChk.textContent = isGCalChecked ? '✓' : '';
+    gcalChk.style.borderColor = '#4285f4';
+    if (isGCalChecked) {
+        gcalChk.style.backgroundColor = '#4285f4';
+        gcalChk.style.color = '#ffffff';
+    } else {
+        gcalChk.style.backgroundColor = 'transparent';
+    }
+
+    const gcalLabel = document.createElement('span');
+    gcalLabel.className = 'cal-filter-label';
+    gcalLabel.style.flex = '1';
+    gcalLabel.textContent = 'Google Календарь';
+
+    const gcalChevronBtn = document.createElement('button');
+    gcalChevronBtn.type = 'button';
+    gcalChevronBtn.className = `cal-filter-chevron-btn${isGCalExpanded ? '' : ' collapsed'}`;
+    gcalChevronBtn.title = isGCalExpanded ? 'Свернуть календари' : 'Развернуть календари';
+    gcalChevronBtn.setAttribute('aria-label', gcalChevronBtn.title);
+    gcalChevronBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    `;
+
+    gcalHeader.appendChild(gcalChk);
+    gcalHeader.appendChild(gcalLabel);
+    gcalHeader.appendChild(gcalChevronBtn);
+    gcalGroup.appendChild(gcalHeader);
+
+    const toggleGCalMaster = () => {
         if (calendarSelectedProjects.has('all')) {
             calendarSelectedProjects.clear();
             calendarSelectedProjects.add('inbox');
@@ -20990,9 +21090,132 @@ function renderCalendarProjectFilters() {
             calendarSelectedProjects.delete('gcal');
         } else {
             calendarSelectedProjects.add('gcal');
+            if (gcalUserCalendars.length > 0 && gcalUserCalendars.every(c => hiddenCals.includes(c.id))) {
+                gcalHiddenCalendars = [];
+                try { localStorage.setItem('gcal_hidden_calendars', JSON.stringify([])); } catch (e) {}
+                if (typeof currentUid !== 'undefined' && currentUid) {
+                    window.setDoc(window.doc(db, "users", currentUid), { gcal_hidden_calendars: [] }, { merge: true }).catch(() => {});
+                }
+            }
         }
         renderCalendarView();
-    }));
+    };
+
+    gcalChk.onclick = (e) => {
+        e.stopPropagation();
+        toggleGCalMaster();
+    };
+
+    const toggleGCalExpand = (e) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        isGCalExpanded = !isGCalExpanded;
+        try {
+            localStorage.setItem('todo_cal_gcal_expanded', isGCalExpanded ? 'true' : 'false');
+        } catch (e) {}
+        gcalChevronBtn.classList.toggle('collapsed', !isGCalExpanded);
+        gcalChevronBtn.title = isGCalExpanded ? 'Свернуть календари' : 'Развернуть календари';
+        if (gcalSublistEl) {
+            gcalSublistEl.style.display = isGCalExpanded ? 'flex' : 'none';
+        }
+    };
+
+    gcalChevronBtn.onclick = toggleGCalExpand;
+    gcalLabel.onclick = toggleGCalExpand;
+    gcalHeader.onclick = (e) => {
+        if (e.target !== gcalChk) {
+            toggleGCalExpand(e);
+        }
+    };
+
+    const gcalSublistEl = document.createElement('div');
+    gcalSublistEl.className = 'cal-gcal-sublist';
+    gcalSublistEl.style.display = isGCalExpanded ? 'flex' : 'none';
+
+    if (gcalUserCalendars && gcalUserCalendars.length > 0) {
+        gcalUserCalendars.forEach(cal => {
+            const isCalHidden = hiddenCals.includes(cal.id);
+            const isSubChecked = isGCalChecked && !isCalHidden;
+            const calColor = cal.backgroundColor || '#4285f4';
+
+            const subItem = document.createElement('div');
+            subItem.className = `cal-filter-item cal-sub-filter-item${isSubChecked ? ' checked' : ''}`;
+            subItem.setAttribute('data-cal-id', cal.id);
+
+            const subChk = document.createElement('div');
+            subChk.className = 'cal-filter-checkbox';
+            subChk.textContent = isSubChecked ? '✓' : '';
+            subChk.style.borderColor = calColor;
+            if (isSubChecked) {
+                subChk.style.backgroundColor = calColor;
+                subChk.style.color = '#ffffff';
+            } else {
+                subChk.style.backgroundColor = 'transparent';
+            }
+
+            const subLabel = document.createElement('span');
+            subLabel.className = 'cal-filter-label';
+            subLabel.textContent = cal.summary || 'Без названия';
+            subLabel.title = cal.summary || 'Без названия';
+
+            subItem.appendChild(subChk);
+            subItem.appendChild(subLabel);
+
+            subItem.onclick = (e) => {
+                e.stopPropagation();
+                const idx = gcalHiddenCalendars.indexOf(cal.id);
+                if (isSubChecked) {
+                    if (idx === -1) {
+                        gcalHiddenCalendars.push(cal.id);
+                    }
+                } else {
+                    if (idx > -1) {
+                        gcalHiddenCalendars.splice(idx, 1);
+                    }
+                    if (!calendarSelectedProjects.has('all') && !calendarSelectedProjects.has('gcal')) {
+                        calendarSelectedProjects.add('gcal');
+                    }
+                }
+
+                if (calendarSelectedProjects.has('all') && isSubChecked) {
+                    const allHidden = gcalUserCalendars.every(c => gcalHiddenCalendars.includes(c.id));
+                    if (allHidden) {
+                        calendarSelectedProjects.clear();
+                        calendarSelectedProjects.add('inbox');
+                        projectsList.forEach(p => calendarSelectedProjects.add(p.id));
+                    }
+                }
+
+                try {
+                    localStorage.setItem('gcal_hidden_calendars', JSON.stringify(gcalHiddenCalendars));
+                } catch (e) {}
+                if (typeof currentUid !== 'undefined' && currentUid) {
+                    window.setDoc(window.doc(db, "users", currentUid), {
+                        gcal_hidden_calendars: gcalHiddenCalendars
+                    }, { merge: true }).catch(() => {});
+                }
+
+                renderCalendarView();
+            };
+
+            gcalSublistEl.appendChild(subItem);
+        });
+    } else if (hasGCalToken) {
+        const loadingItem = document.createElement('div');
+        loadingItem.className = 'cal-sub-filter-msg';
+        loadingItem.textContent = 'Загрузка календарей...';
+        gcalSublistEl.appendChild(loadingItem);
+    } else {
+        const notConnectedItem = document.createElement('div');
+        notConnectedItem.className = 'cal-sub-filter-msg';
+        notConnectedItem.textContent = 'Календарь не подключен';
+        gcalSublistEl.appendChild(notConnectedItem);
+    }
+
+    gcalGroup.appendChild(gcalSublistEl);
+    listEl.appendChild(gcalGroup);
 
     // Item: Входящие
     const isInboxChecked = isAllChecked || calendarSelectedProjects.has('inbox');

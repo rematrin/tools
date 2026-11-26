@@ -3138,9 +3138,58 @@ function updateBrowserTitle() {
     document.title = title;
 }
 
+// Управление полноэкранным режимом Календаря
+function isCalendarFullscreen() {
+    return document.body ? document.body.classList.contains('calendar-fullscreen') : false;
+}
+
+function setCalendarFullscreen(enable, updateUrl = true) {
+    const isNow = !!enable;
+    if (document.documentElement) {
+        document.documentElement.classList.toggle('calendar-fullscreen', isNow);
+    }
+    if (document.body) {
+        document.body.classList.toggle('calendar-fullscreen', isNow);
+    }
+
+    const btn = document.getElementById('calFullscreenBtn');
+    if (btn) {
+        btn.classList.toggle('active', isNow);
+        btn.title = isNow ? 'Свернуть обратно (Esc)' : 'Развернуть на весь экран';
+    }
+
+    if (updateUrl) {
+        try {
+            const url = new URL(window.location.href);
+            if (isNow) {
+                url.searchParams.set('fullscreen', '1');
+            } else {
+                url.searchParams.delete('fullscreen');
+                if (url.hash && url.hash.includes('fullscreen')) {
+                    url.hash = url.hash.replace(/[?&]fullscreen=[^&]*/, '').replace(/^[?&]/, '');
+                }
+            }
+            window.history.replaceState(null, '', url.toString());
+        } catch (e) {
+            console.error('Failed to update URL fullscreen param:', e);
+        }
+    }
+
+    window.dispatchEvent(new Event('resize'));
+
+    if (typeof renderCalendarView === 'function' && currentRoute === 'calendar') {
+        renderCalendarView();
+    }
+}
+
+function toggleCalendarFullscreen() {
+    setCalendarFullscreen(!isCalendarFullscreen(), true);
+}
+
 // Функция роутинга (обработки URL хэшей)
 function handleRoute() {
-    const hash = window.location.hash.replace('#', '');
+    const rawHash = (window.location.hash || '').replace(/^#/, '');
+    const hash = rawHash.split('?')[0].split('&')[0];
     if (hash === 'today') {
         currentRoute = 'today';
     } else if (hash === 'tomorrow') {
@@ -3178,6 +3227,26 @@ function handleRoute() {
     document.documentElement.classList.toggle('route-calendar', currentRoute === 'calendar');
     if (document.body) {
         document.body.classList.toggle('route-calendar', currentRoute === 'calendar');
+    }
+
+    // Проверяем параметр fullscreen для календаря в ссылке (?fullscreen=1 или #calendar?fullscreen=1)
+    let isFullscreenParam = false;
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        isFullscreenParam = urlParams.get('fullscreen') === '1' || urlParams.get('fullscreen') === 'true' ||
+            rawHash.includes('fullscreen=1') || rawHash.includes('fullscreen=true');
+    } catch (e) {}
+
+    if (currentRoute === 'calendar') {
+        if (isFullscreenParam && !isCalendarFullscreen()) {
+            setCalendarFullscreen(true, false);
+        } else if (!isFullscreenParam && isCalendarFullscreen()) {
+            setCalendarFullscreen(false, false);
+        }
+    } else {
+        if (isCalendarFullscreen()) {
+            setCalendarFullscreen(false, true);
+        }
     }
 
     // Обновляем подсветку пунктов меню в сайдбаре
@@ -20957,6 +21026,20 @@ function initCalendarEventListeners() {
     const splitSettingsBtn = document.getElementById('calSplitSettingsBtn');
     if (splitSettingsBtn) {
         splitSettingsBtn.onclick = openCalendarCategoriesModal;
+    }
+
+    const fullscreenBtn = document.getElementById('calFullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.onclick = toggleCalendarFullscreen;
+    }
+
+    if (!window._calFullscreenEscBound) {
+        window._calFullscreenEscBound = true;
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isCalendarFullscreen()) {
+                setCalendarFullscreen(false, true);
+            }
+        });
     }
 
     initCalendarCategoriesModal();

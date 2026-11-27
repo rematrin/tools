@@ -13334,6 +13334,9 @@ function closeTaskDetailsModal() {
             if (currentModalTaskId === null) {
                 taskDetailsModal.style.display = 'none';
                 updateMobileFabVisibility();
+                if (currentDayModalDate) {
+                    openCalendarDayModal(currentDayModalDate);
+                }
             }
         }, 300);
     }
@@ -21036,8 +21039,15 @@ function initCalendarEventListeners() {
     if (!window._calFullscreenEscBound) {
         window._calFullscreenEscBound = true;
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isCalendarFullscreen()) {
-                setCalendarFullscreen(false, true);
+            if (e.key === 'Escape') {
+                const dayModal = document.getElementById('calendarDayModal');
+                if (dayModal && dayModal.style.display !== 'none') {
+                    closeCalendarDayModal();
+                    return;
+                }
+                if (isCalendarFullscreen()) {
+                    setCalendarFullscreen(false, true);
+                }
             }
         });
     }
@@ -21553,6 +21563,7 @@ function renderCalendarProjectFilters() {
 }
 
 async function renderCalendarView() {
+    closeCalendarDayMorePopover();
     const renderId = ++calendarRenderCounter;
 
     const gridContainer = document.getElementById('calendarGridContainer');
@@ -21723,14 +21734,510 @@ function createCalMonthItem(itemObj) {
         title.textContent = event.summary || 'Событие';
         item.appendChild(title);
 
-        if (event.htmlLink) {
-            item.onclick = (e) => {
-                e.stopPropagation();
-                window.open(event.htmlLink, '_blank');
-            };
-        }
+        item.onclick = (e) => {
+            e.stopPropagation();
+            openGCalEventPopover(event, item);
+        };
         return item;
     }
+}
+
+let activeGCalEventPopover = null;
+let activeGCalEventCleanup = null;
+
+function closeGCalEventPopover() {
+    if (activeGCalEventPopover) {
+        activeGCalEventPopover.remove();
+        activeGCalEventPopover = null;
+    }
+    if (activeGCalEventCleanup) {
+        activeGCalEventCleanup();
+        activeGCalEventCleanup = null;
+    }
+}
+
+function formatGCalEventDateTime(event) {
+    const weekdaysFull = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+    const monthsGen = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+    if (event.start?.dateTime) {
+        const startDt = new Date(event.start.dateTime);
+        const endDt = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+        const weekday = weekdaysFull[startDt.getDay()];
+        const day = startDt.getDate();
+        const month = monthsGen[startDt.getMonth()];
+        const startTime = `${String(startDt.getHours()).padStart(2, '0')}:${String(startDt.getMinutes()).padStart(2, '0')}`;
+
+        if (endDt) {
+            const endTime = `${String(endDt.getHours()).padStart(2, '0')}:${String(endDt.getMinutes()).padStart(2, '0')}`;
+            const isSameDay = startDt.toDateString() === endDt.toDateString();
+            if (isSameDay) {
+                return `${weekday}, ${day} ${month} · ${startTime}–${endTime}`;
+            } else {
+                const endDay = endDt.getDate();
+                const endMonth = monthsGen[endDt.getMonth()];
+                return `${day} ${month}, ${startTime} – ${endDay} ${endMonth}, ${endTime}`;
+            }
+        }
+        return `${weekday}, ${day} ${month} · ${startTime}`;
+    } else if (event.start?.date) {
+        const parts = event.start.date.split('-');
+        const year = parseInt(parts[0], 10);
+        const monthIdx = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const startDt = new Date(year, monthIdx, day);
+        const weekday = weekdaysFull[startDt.getDay()];
+        const month = monthsGen[monthIdx];
+
+        if (event.end?.date && event.end.date !== event.start.date) {
+            const endParts = event.end.date.split('-');
+            const endDt = new Date(parseInt(endParts[0], 10), parseInt(endParts[1], 10) - 1, parseInt(endParts[2], 10));
+            endDt.setDate(endDt.getDate() - 1);
+            if (endDt > startDt) {
+                const endDay = endDt.getDate();
+                const endMonth = monthsGen[endDt.getMonth()];
+                return `${day} ${month} – ${endDay} ${endMonth} (весь день)`;
+            }
+        }
+        return `${weekday}, ${day} ${month} (весь день)`;
+    }
+    return '';
+}
+
+function openGCalEventPopover(event, anchorEl) {
+    closeGCalEventPopover();
+    if (!event || !anchorEl) return;
+
+    const popover = document.createElement('div');
+    popover.className = 'gcal-event-popover';
+    popover.id = 'gcalEventPopover';
+
+    // Top action bar
+    const topActions = document.createElement('div');
+    topActions.className = 'gcal-popover-top-actions';
+
+    if (event.htmlLink) {
+        const extBtn = document.createElement('a');
+        extBtn.className = 'gcal-popover-action-btn';
+        extBtn.href = event.htmlLink;
+        extBtn.target = '_blank';
+        extBtn.rel = 'noopener';
+        extBtn.title = 'Открыть в Google Календаре';
+        extBtn.setAttribute('aria-label', 'Открыть в Google Календаре');
+        extBtn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+        `;
+        topActions.appendChild(extBtn);
+    }
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'gcal-popover-action-btn';
+    closeBtn.title = 'Закрыть';
+    closeBtn.setAttribute('aria-label', 'Закрыть');
+    closeBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    `;
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        closeGCalEventPopover();
+    };
+    topActions.appendChild(closeBtn);
+    popover.appendChild(topActions);
+
+    // Main title row
+    const mainRow = document.createElement('div');
+    mainRow.className = 'gcal-popover-main-row';
+
+    const colorDot = document.createElement('div');
+    colorDot.className = 'gcal-popover-color-dot';
+    colorDot.style.backgroundColor = event.calendarColor || '#4285f4';
+    mainRow.appendChild(colorDot);
+
+    const titleBlock = document.createElement('div');
+    titleBlock.className = 'gcal-popover-title-block';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'gcal-popover-title';
+    titleEl.textContent = event.summary || 'Без названия';
+    titleBlock.appendChild(titleEl);
+
+    const dateTimeStr = formatGCalEventDateTime(event);
+    if (dateTimeStr) {
+        const dtEl = document.createElement('div');
+        dtEl.className = 'gcal-popover-datetime';
+        dtEl.textContent = dateTimeStr;
+        titleBlock.appendChild(dtEl);
+    }
+    mainRow.appendChild(titleBlock);
+    popover.appendChild(mainRow);
+
+    // Info rows
+    const infoRows = document.createElement('div');
+    infoRows.className = 'gcal-popover-info-rows';
+
+    // Calendar & Author row
+    const calRow = document.createElement('div');
+    calRow.className = 'gcal-popover-info-row';
+    const authorName = event.organizer?.displayName || event.creator?.displayName || (event.organizer?.email ? event.organizer.email.split('@')[0] : '');
+    calRow.innerHTML = `
+        <svg class="gcal-popover-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <div class="gcal-popover-info-content">
+            <div class="gcal-popover-cal-name">${escapeHtml(event.calendarName || 'Google Календарь')}</div>
+            ${authorName ? `<div class="gcal-popover-cal-author">Автор: ${escapeHtml(authorName)}</div>` : ''}
+        </div>
+    `;
+    infoRows.appendChild(calRow);
+
+    // Location row
+    if (event.location) {
+        const locRow = document.createElement('div');
+        locRow.className = 'gcal-popover-info-row';
+        locRow.innerHTML = `
+            <svg class="gcal-popover-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <div class="gcal-popover-info-content">
+                <div>${escapeHtml(event.location)}</div>
+            </div>
+        `;
+        infoRows.appendChild(locRow);
+    }
+
+    // Meet / Hangout link row
+    if (event.hangoutLink) {
+        const meetRow = document.createElement('div');
+        meetRow.className = 'gcal-popover-info-row';
+        meetRow.innerHTML = `
+            <svg class="gcal-popover-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            <div class="gcal-popover-info-content">
+                <a href="${event.hangoutLink}" target="_blank" rel="noopener" style="color: var(--accent, #4285f4); font-weight: 500; text-decoration: none;">Присоединиться к видеовстрече</a>
+            </div>
+        `;
+        infoRows.appendChild(meetRow);
+    }
+
+    // Description row
+    if (event.description) {
+        const cleanDesc = event.description.replace(/<[^>]*>?/gm, '').trim();
+        if (cleanDesc) {
+            const descRow = document.createElement('div');
+            descRow.className = 'gcal-popover-info-row';
+            descRow.innerHTML = `
+                <svg class="gcal-popover-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <div class="gcal-popover-info-content">
+                    <div class="gcal-popover-desc">${escapeHtml(cleanDesc)}</div>
+                </div>
+            `;
+            infoRows.appendChild(descRow);
+        }
+    }
+
+    popover.appendChild(infoRows);
+    document.body.appendChild(popover);
+    activeGCalEventPopover = popover;
+
+    // Smart positioning relative to anchorEl
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const width = popoverRect.width || 360;
+    const height = popoverRect.height || 220;
+    const margin = 12;
+
+    let left = anchorRect.right + 12;
+    if (left + width > window.innerWidth - margin) {
+        left = anchorRect.left - width - 12;
+    }
+    if (left < margin) {
+        left = Math.max(margin, Math.min(window.innerWidth - width - margin, (window.innerWidth - width) / 2));
+    }
+
+    let top = anchorRect.top - 8;
+    if (top + height > window.innerHeight - margin) {
+        top = window.innerHeight - height - margin;
+    }
+    if (top < margin) {
+        top = margin;
+    }
+
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+
+    // Listeners for closing
+    const onOutsideClick = (e) => {
+        if (!popover.contains(e.target) && !anchorEl.contains(e.target)) {
+            closeGCalEventPopover();
+        }
+    };
+    const onKeydown = (e) => {
+        if (e.key === 'Escape') {
+            closeGCalEventPopover();
+        }
+    };
+    const onResize = () => {
+        closeGCalEventPopover();
+    };
+
+    setTimeout(() => {
+        document.addEventListener('click', onOutsideClick);
+    }, 0);
+    document.addEventListener('keydown', onKeydown);
+    window.addEventListener('resize', onResize);
+
+    activeGCalEventCleanup = () => {
+        document.removeEventListener('click', onOutsideClick);
+        document.removeEventListener('keydown', onKeydown);
+        window.removeEventListener('resize', onResize);
+    };
+}
+
+let activeCalDayMorePopover = null;
+let activeCalDayMoreCleanup = null;
+
+function closeCalendarDayMorePopover() {
+    if (activeCalDayMorePopover) {
+        activeCalDayMorePopover.remove();
+        activeCalDayMorePopover = null;
+    }
+    if (activeCalDayMoreCleanup) {
+        activeCalDayMoreCleanup();
+        activeCalDayMoreCleanup = null;
+    }
+}
+
+function openCalendarDayMorePopover(options) {
+    closeCalendarDayMorePopover();
+
+    const { cellEl, dateObj, dayEventItems = [], dayTaskItems = [] } = options;
+    if (!cellEl || !dateObj) return;
+
+    const popover = document.createElement('div');
+    popover.className = 'cal-day-more-popover';
+    popover.id = 'calDayMorePopover';
+
+    // Заголовок в стиле Google Календаря: День недели (напр. ПТ), кнопка закрытия, крупный кружок с числом
+    const weekdays = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+    const weekdayStr = weekdays[dateObj.getDay()];
+    const dayNum = dateObj.getDate();
+    const isToday = formatIsoDate(dateObj) === formatIsoDate(new Date());
+
+    const header = document.createElement('div');
+    header.className = 'cal-popover-header';
+
+    const weekdayEl = document.createElement('div');
+    weekdayEl.className = 'cal-popover-weekday';
+    weekdayEl.textContent = weekdayStr;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'cal-popover-close-btn';
+    closeBtn.setAttribute('aria-label', 'Закрыть');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        closeCalendarDayMorePopover();
+    };
+
+    const dayBadge = document.createElement('div');
+    dayBadge.className = `cal-popover-day-badge${isToday ? ' today' : ''}`;
+    dayBadge.textContent = dayNum;
+
+    header.appendChild(closeBtn);
+    header.appendChild(weekdayEl);
+    header.appendChild(dayBadge);
+    popover.appendChild(header);
+
+    // Список всех событий и задач
+    const itemsList = document.createElement('div');
+    itemsList.className = 'cal-popover-items';
+
+    const hasEvents = dayEventItems.length > 0;
+    const hasTasks = dayTaskItems.length > 0;
+
+    const renderItemIntoList = (itemObj) => {
+        const itemEl = createCalMonthItem(itemObj);
+        const origClick = itemEl.onclick;
+        itemEl.onclick = (e) => {
+            closeCalendarDayMorePopover();
+            if (origClick) origClick(e);
+        };
+        itemsList.appendChild(itemEl);
+    };
+
+    if (hasEvents && hasTasks) {
+        const evHeader = document.createElement('div');
+        evHeader.className = 'cal-popover-section-label';
+        evHeader.textContent = `События (${dayEventItems.length})`;
+        itemsList.appendChild(evHeader);
+        dayEventItems.forEach(renderItemIntoList);
+
+        const tsHeader = document.createElement('div');
+        tsHeader.className = 'cal-popover-section-label';
+        tsHeader.textContent = `Задачи (${dayTaskItems.length})`;
+        itemsList.appendChild(tsHeader);
+        dayTaskItems.forEach(renderItemIntoList);
+    } else if (hasEvents) {
+        dayEventItems.forEach(renderItemIntoList);
+    } else if (hasTasks) {
+        dayTaskItems.forEach(renderItemIntoList);
+    } else {
+        const emptyEl = document.createElement('div');
+        emptyEl.style.cssText = 'font-size: 12px; color: var(--text-secondary); text-align: center; padding: 12px 0;';
+        emptyEl.textContent = 'Нет записей';
+        itemsList.appendChild(emptyEl);
+    }
+
+    popover.appendChild(itemsList);
+    document.body.appendChild(popover);
+    activeCalDayMorePopover = popover;
+
+    // Вычисляем координаты всплывающего окна над ячейкой дня
+    const cellRect = cellEl.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const popoverWidth = popoverRect.width || 256;
+    const popoverHeight = popoverRect.height || 260;
+
+    let left = cellRect.left + (cellRect.width - popoverWidth) / 2;
+    let top = cellRect.top;
+
+    const margin = 12;
+    if (left < margin) left = margin;
+    if (left + popoverWidth > window.innerWidth - margin) {
+        left = window.innerWidth - popoverWidth - margin;
+    }
+    if (top + popoverHeight > window.innerHeight - margin) {
+        top = window.innerHeight - popoverHeight - margin;
+    }
+    if (top < margin) top = margin;
+
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+
+    // Слушатели закрытия
+    const onOutsideClick = (e) => {
+        if (!popover.contains(e.target) && !e.target.closest('.cal-more-badge')) {
+            closeCalendarDayMorePopover();
+        }
+    };
+    const onKeydown = (e) => {
+        if (e.key === 'Escape') {
+            closeCalendarDayMorePopover();
+        }
+    };
+    const onResize = () => {
+        closeCalendarDayMorePopover();
+    };
+
+    setTimeout(() => {
+        document.addEventListener('click', onOutsideClick);
+    }, 0);
+    document.addEventListener('keydown', onKeydown);
+    window.addEventListener('resize', onResize);
+
+    activeCalDayMoreCleanup = () => {
+        document.removeEventListener('click', onOutsideClick);
+        document.removeEventListener('keydown', onKeydown);
+        window.removeEventListener('resize', onResize);
+    };
+}
+
+let currentDayModalDate = null;
+
+function closeCalendarDayModal() {
+    const modal = document.getElementById('calendarDayModal');
+    if (modal) modal.style.display = 'none';
+    const body = document.getElementById('calDayModalBody');
+    if (body) body.innerHTML = '';
+    currentDayModalDate = null;
+}
+
+async function openCalendarDayModal(dateObj) {
+    if (!dateObj) return;
+    currentDayModalDate = new Date(dateObj);
+
+    const modal = document.getElementById('calendarDayModal');
+    const body = document.getElementById('calDayModalBody');
+    const titleEl = document.getElementById('calDayModalTitle');
+    const badgeEl = document.getElementById('calDayModalDateBadge');
+    const closeBtn = document.getElementById('btnCalDayModalClose');
+
+    if (!modal || !body) return;
+
+    // Закрываем всплывающее окно «+N», если оно открыто
+    closeCalendarDayMorePopover();
+
+    const weekdaysFull = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+    const monthNamesGenitive = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const weekdayName = weekdaysFull[dateObj.getDay()];
+    const dateNum = dateObj.getDate();
+    const isToday = formatIsoDate(dateObj) === formatIsoDate(new Date());
+
+    if (titleEl) {
+        titleEl.textContent = `${weekdayName}, ${dateNum} ${monthNamesGenitive[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+    }
+    if (badgeEl) {
+        badgeEl.textContent = dateNum;
+        badgeEl.classList.toggle('today', isToday);
+    }
+
+    if (closeBtn) {
+        closeBtn.onclick = closeCalendarDayModal;
+    }
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            closeCalendarDayModal();
+        }
+    };
+
+    // Подготовка задач и событий Google Календаря
+    const isProjectVisible = (t) => {
+        if (calendarSelectedProjects.has('all')) return true;
+        if (t.projectId) return calendarSelectedProjects.has(t.projectId);
+        return calendarSelectedProjects.has('inbox');
+    };
+    const dayTasks = allTasks.filter(t => !t.deleted && (!t.completed || calendarShowCompleted) && t.dueDate && isProjectVisible(t));
+
+    const isGCalVisible = calendarSelectedProjects.has('all') || calendarSelectedProjects.has('gcal');
+    const range = getRangeForCalendarView('day', dateObj);
+    const rawGCalEvents = isGCalVisible ? await fetchCalendarGCalEvents(range.start, range.end) : [];
+
+    // Проверяем актуальность запроса
+    if (!currentDayModalDate || formatIsoDate(currentDayModalDate) !== formatIsoDate(dateObj)) return;
+
+    body.innerHTML = '';
+    renderDayView(body, dayTasks, rawGCalEvents, dateObj, {
+        onTaskScheduleChanged: () => {
+            renderTasks(true);
+            renderCalendarView();
+            if (currentDayModalDate) {
+                openCalendarDayModal(currentDayModalDate);
+            }
+        }
+    });
+
+    modal.style.display = 'flex';
 }
 
 function renderMonthView(container, tasks, gcalEvents, range) {
@@ -21756,6 +22263,7 @@ function renderMonthView(container, tasks, gcalEvents, range) {
 
     while (currDate <= range.end) {
         const dayIso = formatIsoDate(currDate);
+        const dayDateObj = new Date(currDate);
         const isCurrentMonth = currDate.getMonth() === currentCalendarDate.getMonth();
         const isToday = dayIso === todayIso;
 
@@ -21768,6 +22276,11 @@ function renderMonthView(container, tasks, gcalEvents, range) {
         const numberSpan = document.createElement('span');
         numberSpan.className = 'cal-day-number';
         numberSpan.textContent = currDate.getDate();
+        numberSpan.title = 'Посмотреть день';
+        numberSpan.onclick = (e) => {
+            e.stopPropagation();
+            openCalendarDayModal(dayDateObj);
+        };
 
         const addBtn = document.createElement('button');
         addBtn.className = 'cal-add-btn';
@@ -21843,9 +22356,14 @@ function renderMonthView(container, tasks, gcalEvents, range) {
             moreBadge.title = `Еще ${dayEventItems.length - maxVisiblePerCol} событий`;
             moreBadge.onclick = (e) => {
                 e.stopPropagation();
-                currentCalendarDate = new Date(targetDateIso);
-                currentCalendarView = 'day';
-                renderCalendarView();
+                openCalendarDayMorePopover({
+                    cellEl: cell,
+                    anchorEl: moreBadge,
+                    dateObj: dayDateObj,
+                    dayEventItems,
+                    dayTaskItems,
+                    initialCategory: 'events'
+                });
             };
             eventsCol.appendChild(moreBadge);
         }
@@ -21876,9 +22394,14 @@ function renderMonthView(container, tasks, gcalEvents, range) {
             moreBadge.title = `Еще ${dayTaskItems.length - maxVisiblePerCol} задач`;
             moreBadge.onclick = (e) => {
                 e.stopPropagation();
-                currentCalendarDate = new Date(targetDateIso);
-                currentCalendarView = 'day';
-                renderCalendarView();
+                openCalendarDayMorePopover({
+                    cellEl: cell,
+                    anchorEl: moreBadge,
+                    dateObj: dayDateObj,
+                    dayEventItems,
+                    dayTaskItems,
+                    initialCategory: 'tasks'
+                });
             };
             tasksCol.appendChild(moreBadge);
         }
@@ -21905,7 +22428,27 @@ function createCalWeekAllDayItem(itemObj) {
         const item = document.createElement('div');
         item.className = `cal-item${task.completed ? ' completed' : ''}${isNote ? ' cal-item-note' : ''}`;
         item.style.borderLeftColor = projColor;
-        item.title = getCalendarTaskTitle(task.title);
+        item.draggable = true;
+        item.dataset.calendarTaskId = task.id;
+        item.title = 'Перетащите на нужное время';
+        let allDayTaskWasDragged = false;
+
+        item.addEventListener('dragstart', (e) => {
+            allDayTaskWasDragged = true;
+            item.classList.add('calendar-task-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/x-todo-calendar-task', task.id);
+            e.dataTransfer.setData('text/plain', task.id);
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('calendar-task-dragging');
+        });
+        item.addEventListener('contextmenu', (e) => {
+            if (!window.matchMedia('(hover: hover)').matches) return;
+            e.preventDefault();
+            e.stopPropagation();
+            openCalendarTaskContextMenu(task, e);
+        });
 
         const chk = document.createElement('div');
         chk.className = 'cal-item-checkbox';
@@ -21926,6 +22469,10 @@ function createCalWeekAllDayItem(itemObj) {
         item.appendChild(chk);
         item.appendChild(title);
         item.onclick = (e) => {
+            if (allDayTaskWasDragged) {
+                allDayTaskWasDragged = false;
+                return;
+            }
             e.stopPropagation();
             openTaskDetailsModal(task.id);
         };
@@ -21940,12 +22487,10 @@ function createCalWeekAllDayItem(itemObj) {
         title.textContent = event.summary || 'Событие';
         item.title = event.summary || 'Событие';
         item.appendChild(title);
-        if (event.htmlLink) {
-            item.onclick = (e) => {
-                e.stopPropagation();
-                window.open(event.htmlLink, '_blank');
-            };
-        }
+        item.onclick = (e) => {
+            e.stopPropagation();
+            openGCalEventPopover(event, item);
+        };
         return item;
     }
 }
@@ -21997,10 +22542,33 @@ function renderWeekView(container, tasks, gcalEvents, range) {
     const allDayCols = document.createElement('div');
     allDayCols.className = 'cal-all-day-cols';
 
+    const allDayCellsMap = new Map();
+
+    const saveTaskScheduleWeek = async (task, fields) => {
+        const previous = {
+            dueDate: task.dueDate || null,
+            dueTime: task.dueTime || null,
+            dueEndDate: task.dueEndDate || null,
+            dueEndTime: task.dueEndTime || null
+        };
+        Object.assign(task, fields);
+        renderTasks(true);
+        renderCalendarView();
+        if (!currentUid || !task.id) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), fields);
+        } catch (err) {
+            console.error('Ошибка изменения времени задачи в календаре:', err);
+            Object.assign(task, previous);
+            renderCalendarView();
+        }
+    };
+
     daysList.forEach(dayObj => {
         const dayIso = formatIsoDate(dayObj);
         const cell = document.createElement('div');
         cell.className = 'cal-all-day-cell cal-split-all-day-cell';
+        allDayCellsMap.set(dayIso, cell);
 
         // Filter timeless tasks (no dueTime)
         const timelessTasks = tasks.filter(t => t.dueDate === dayIso && !t.dueTime);
@@ -22087,6 +22655,40 @@ function renderWeekView(container, tasks, gcalEvents, range) {
             dayCol.appendChild(slot);
         }
 
+        dayCol.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            dayCol.classList.add('calendar-drop-target');
+        });
+        dayCol.addEventListener('dragleave', (e) => {
+            if (!dayCol.contains(e.relatedTarget)) {
+                dayCol.classList.remove('calendar-drop-target');
+            }
+        });
+        dayCol.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dayCol.classList.remove('calendar-drop-target');
+            const taskId = e.dataTransfer?.getData('application/x-todo-calendar-task') || e.dataTransfer?.getData('text/plain');
+            const task = (tasks && tasks.find(t => t.id === taskId)) || allTasks.find(candidate => candidate.id === taskId);
+            if (!task) return;
+
+            const rect = dayCol.getBoundingClientRect();
+            const y = Math.max(0, Math.min(1200, e.clientY - rect.top));
+            const rawMinutes = (y / 50) * 60;
+            const duration = task.dueTime ? getCalendarTaskDuration(task, dayIso) : CALENDAR_DEFAULT_TASK_MINUTES;
+            const startMinutes = Math.max(0, Math.min(1440 - duration, snapCalendarMinutes(rawMinutes)));
+            const fields = {
+                dueDate: dayIso,
+                dueTime: calendarMinutesToTime(startMinutes)
+            };
+
+            if (task.dueEndTime) {
+                fields.dueEndDate = dayIso;
+                fields.dueEndTime = calendarMinutesToTime(Math.min(1439, startMinutes + duration));
+            }
+            saveTaskScheduleWeek(task, fields);
+        });
+
         // Render Timed Tasks for this day (tasks with dueTime)
         const timedTasks = tasks.filter(t => t.dueDate === dayIso && !!t.dueTime);
         timedTasks.forEach(task => {
@@ -22097,13 +22699,16 @@ function renderWeekView(container, tasks, gcalEvents, range) {
             const hour = parseInt(parts[0], 10) || 0;
             const min = parseInt(parts[1], 10) || 0;
 
-            const topPx = hour * 50 + (min / 60) * 50;
+            const startMinutes = hour * 60 + min;
+            const durationMinutes = getCalendarTaskDuration(task, dayIso);
+            const topPx = (startMinutes / 60) * 50;
+            const heightPx = Math.max(18, (durationMinutes / 60) * 50);
             const isNote = task.title && (task.title.startsWith('* ') || task.title.startsWith('*'));
             const isEvent = getItemCategory(task, false) === 'event';
             const item = document.createElement('div');
-            item.className = `cal-timed-item${task.completed ? ' completed' : ''}${isNote ? ' cal-item-note' : ''}`;
+            item.className = `cal-timed-item cal-todo-timed-item${task.completed ? ' completed' : ''}${isNote ? ' cal-item-note' : ''}`;
             item.style.top = `${topPx}px`;
-            item.style.height = '42px';
+            item.style.height = `${heightPx}px`;
             item.style.borderLeftColor = projColor;
             item.title = getCalendarTaskTitle(task.title);
             if (isEvent) {
@@ -22115,13 +22720,129 @@ function renderWeekView(container, tasks, gcalEvents, range) {
             }
 
             item.innerHTML = `
-                <div style="font-weight: 700; font-size: 10px;">${task.dueTime}</div>
+                <div class="cal-timed-item-time" style="font-weight: 700; font-size: 10px;">${task.dueTime}</div>
                 <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${task.completed ? 'text-decoration: line-through;' : ''}">${escapeHtml(getCalendarTaskTitle(task.title))}</div>
             `;
+
+            let calendarGestureMoved = false;
             item.onclick = (e) => {
                 e.stopPropagation();
+                if (calendarGestureMoved) {
+                    calendarGestureMoved = false;
+                    return;
+                }
                 openTaskDetailsModal(task.id);
             };
+
+            const timeLabel = item.querySelector('.cal-timed-item-time');
+            const updateItemPreview = (previewStart, previewEnd) => {
+                const previewTop = (previewStart / 60) * 50;
+                item.style.top = `${previewTop}px`;
+                item.style.height = `${Math.max(18, ((previewEnd - previewStart) / 60) * 50)}px`;
+                if (timeLabel) {
+                    timeLabel.textContent = `${calendarMinutesToTime(previewStart)}`;
+                }
+            };
+
+            const startPointerGestureWeek = (e) => {
+                if (e.button !== undefined && e.button !== 0) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                const pointerStartClientY = e.clientY;
+                const startScrollTop = timelineContainer.scrollTop;
+                const originalStart = startMinutes;
+                const originalEnd = Math.min(1440, originalStart + durationMinutes);
+                let previewStart = originalStart;
+                let previewEnd = originalEnd;
+                let dropWithoutTime = false;
+                calendarGestureMoved = false;
+                item.classList.add('calendar-task-moving');
+                item.setPointerCapture?.(e.pointerId);
+
+                const cell = allDayCellsMap.get(dayIso);
+
+                const onPointerMove = (moveEvent) => {
+                    const containerRect = timelineContainer.getBoundingClientRect();
+                    if (moveEvent.clientY < containerRect.top + 36) {
+                        timelineContainer.scrollTop -= 14;
+                    } else if (moveEvent.clientY > containerRect.bottom - 36) {
+                        timelineContainer.scrollTop += 14;
+                    }
+
+                    const scrollDelta = timelineContainer.scrollTop - startScrollTop;
+                    const deltaPx = (moveEvent.clientY - pointerStartClientY) + scrollDelta;
+                    if (Math.abs(deltaPx) >= 3) calendarGestureMoved = true;
+
+                    const stickyRect = stickyHeader.getBoundingClientRect();
+                    const isAboveOrInHeader = moveEvent.clientY <= stickyRect.bottom;
+                    const cellRect = cell ? cell.getBoundingClientRect() : null;
+                    const isOverCell = cellRect && (
+                        moveEvent.clientY >= cellRect.top - 20 &&
+                        moveEvent.clientY <= cellRect.bottom + 20 &&
+                        moveEvent.clientX >= cellRect.left - 20 &&
+                        moveEvent.clientX <= cellRect.right + 20
+                    );
+                    const elementUnderPointer = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+                    const matchesDom = !!elementUnderPointer && (
+                        (cell && cell.contains(elementUnderPointer)) ||
+                        !!elementUnderPointer.closest('.cal-all-day-cell, .cal-all-day-row, .cal-sticky-header')
+                    );
+                    dropWithoutTime = isAboveOrInHeader || isOverCell || matchesDom;
+                    if (cell) cell.classList.toggle('calendar-all-day-drop-target', dropWithoutTime);
+                    item.classList.toggle('calendar-task-to-all-day', dropWithoutTime);
+
+                    if (!dropWithoutTime) {
+                        const originalStartY = (originalStart / 60) * 50;
+                        const targetMinutes = ((originalStartY + deltaPx) / 50) * 60;
+                        previewStart = Math.max(0, Math.min(1440 - durationMinutes, snapCalendarMinutes(targetMinutes)));
+                        previewEnd = previewStart + durationMinutes;
+                        updateItemPreview(previewStart, previewEnd);
+                    }
+                };
+
+                const onPointerEnd = () => {
+                    item.classList.remove('calendar-task-moving');
+                    item.classList.remove('calendar-task-to-all-day');
+                    if (cell) cell.classList.remove('calendar-all-day-drop-target');
+                    item.removeEventListener('pointermove', onPointerMove);
+                    item.removeEventListener('pointerup', onPointerEnd);
+                    item.removeEventListener('pointercancel', onPointerEnd);
+
+                    if (!calendarGestureMoved) {
+                        updateItemPreview(originalStart, originalEnd);
+                        return;
+                    }
+
+                    if (dropWithoutTime) {
+                        saveTaskScheduleWeek(task, {
+                            dueDate: dayIso,
+                            dueTime: null,
+                            dueEndDate: null,
+                            dueEndTime: null
+                        });
+                        return;
+                    }
+
+                    const fields = {
+                        dueDate: dayIso,
+                        dueTime: calendarMinutesToTime(previewStart)
+                    };
+                    if (task.dueEndTime) {
+                        fields.dueEndDate = dayIso;
+                        fields.dueEndTime = calendarMinutesToTime(Math.min(1439, previewEnd));
+                    }
+                    saveTaskScheduleWeek(task, fields);
+                };
+
+                item.addEventListener('pointermove', onPointerMove);
+                item.addEventListener('pointerup', onPointerEnd);
+                item.addEventListener('pointercancel', onPointerEnd);
+            };
+
+            item.addEventListener('pointerdown', (e) => {
+                startPointerGestureWeek(e);
+            });
 
             dayCol.appendChild(item);
         });
@@ -22158,9 +22879,10 @@ function renderWeekView(container, tasks, gcalEvents, range) {
                 <div style="font-weight: 700; font-size: 10px;">${timeStr.substring(0, 5)}</div>
                 <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.summary || 'Событие'}</div>
             `;
-            if (event.htmlLink) {
-                item.onclick = () => window.open(event.htmlLink, '_blank');
-            }
+            item.onclick = (e) => {
+                e.stopPropagation();
+                openGCalEventPopover(event, item);
+            };
 
             dayCol.appendChild(item);
         });
@@ -22595,7 +23317,7 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
         e.preventDefault();
         dayCol.classList.remove('calendar-drop-target');
         const taskId = e.dataTransfer?.getData('application/x-todo-calendar-task') || e.dataTransfer?.getData('text/plain');
-        const task = allTasks.find(candidate => candidate.id === taskId);
+        const task = (tasks && tasks.find(t => t.id === taskId)) || allTasks.find(candidate => candidate.id === taskId);
         if (!task) return;
 
         const rect = dayCol.getBoundingClientRect();
@@ -22773,7 +23495,8 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
             e.preventDefault();
             e.stopPropagation();
 
-            const pointerStartPageY = e.clientY + window.scrollY;
+            const pointerStartClientY = e.clientY;
+            const startScrollTop = timelineContainer.scrollTop;
             const originalStart = startMinutes;
             const originalEnd = Math.min(1440, originalStart + durationMinutes);
             let previewStart = originalStart;
@@ -22788,15 +23511,37 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
                     if (moveEvent.clientY < 72) window.scrollBy(0, -18);
                     if (moveEvent.clientY > window.innerHeight - 72) window.scrollBy(0, 18);
                 }
-                const currentPageY = moveEvent.clientY + window.scrollY;
-                const deltaPx = currentPageY - pointerStartPageY;
+                const containerRect = timelineContainer.getBoundingClientRect();
+                if (moveEvent.clientY < containerRect.top + 36) {
+                    timelineContainer.scrollTop -= 14;
+                } else if (moveEvent.clientY > containerRect.bottom - 36) {
+                    timelineContainer.scrollTop += 14;
+                }
+
+                const scrollDelta = timelineContainer.scrollTop - startScrollTop;
+                const deltaPx = (moveEvent.clientY - pointerStartClientY) + scrollDelta;
                 const originalStartY = calendarMinutesToY(originalStart, calendarLayout);
                 const originalEndY = calendarMinutesToY(originalEnd, calendarLayout);
-                if (Math.abs(currentPageY - pointerStartPageY) >= 3) calendarGestureMoved = true;
+                if (Math.abs(deltaPx) >= 3) calendarGestureMoved = true;
 
                 if (mode === 'move') {
+                    const stickyRect = stickyHeader.getBoundingClientRect();
+                    const cellRect = cell.getBoundingClientRect();
+                    const daySplitRect = daySplitHeader ? daySplitHeader.getBoundingClientRect() : null;
+                    const maxHeaderBottom = Math.max(stickyRect.bottom, daySplitRect ? daySplitRect.bottom : 0);
+                    const isAboveOrInHeader = moveEvent.clientY <= maxHeaderBottom;
+                    const isOverCell = (
+                        moveEvent.clientY >= cellRect.top - 20 &&
+                        moveEvent.clientY <= cellRect.bottom + 20 &&
+                        moveEvent.clientX >= cellRect.left - 20 &&
+                        moveEvent.clientX <= cellRect.right + 20
+                    );
                     const elementUnderPointer = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
-                    dropWithoutTime = !!elementUnderPointer && cell.contains(elementUnderPointer);
+                    const matchesDom = !!elementUnderPointer && (
+                        cell.contains(elementUnderPointer) ||
+                        !!elementUnderPointer.closest('.cal-all-day-cell, .cal-all-day-row, .cal-sticky-header, .cal-day-split-header')
+                    );
+                    dropWithoutTime = isAboveOrInHeader || isOverCell || matchesDom;
                     cell.classList.toggle('calendar-all-day-drop-target', dropWithoutTime);
                     item.classList.toggle('calendar-task-to-all-day', dropWithoutTime);
                 }
@@ -22807,7 +23552,7 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
                 } else if (mode === 'resize-top') {
                     previewStart = Math.max(0, Math.min(originalEnd - CALENDAR_SNAP_MINUTES, snapCalendarMinutes(calendarYToMinutes(originalStartY + deltaPx, calendarLayout))));
                     previewEnd = originalEnd;
-                } else {
+                } else if (mode === 'resize-bottom') {
                     previewStart = originalStart;
                     previewEnd = Math.max(originalStart + CALENDAR_SNAP_MINUTES, Math.min(1440, snapCalendarMinutes(calendarYToMinutes(originalEndY + deltaPx, calendarLayout))));
                 }
@@ -22890,9 +23635,10 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
             <div style="font-weight: 700; font-size: 11px;">${timeStr.substring(0, 5)}</div>
             <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.summary || 'Событие'}</div>
         `;
-        if (event.htmlLink) {
-            item.onclick = () => window.open(event.htmlLink, '_blank');
-        }
+        item.onclick = (e) => {
+            e.stopPropagation();
+            openGCalEventPopover(event, item);
+        };
 
         dayCol.appendChild(item);
     });

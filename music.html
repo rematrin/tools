@@ -2494,13 +2494,12 @@
             cursor: pointer;
             background: #171717;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.2s ease;
             transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .radio-hero-banner:hover {
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
-            transform: translateY(-2px);
+            transform: none !important;
         }
 
         .radio-hero-banner img {
@@ -2758,11 +2757,10 @@
             flex-direction: column;
             cursor: pointer;
             position: relative;
-            transition: transform 0.2s ease;
         }
 
         .radio-card:hover {
-            transform: translateY(-4px);
+            transform: none !important;
         }
 
         .radio-card-cover {
@@ -11739,7 +11737,6 @@
         }
 
         function closeAddAlbumModal() {
-...[truncated for diff preview]
             const modal = document.getElementById('addAlbumModal');
             if (modal) modal.classList.remove('active');
             resetImportModal();

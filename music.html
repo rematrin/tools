@@ -83,9 +83,10 @@
 
         html,
         body {
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         body {
@@ -2494,6 +2495,7 @@
             background: #171717;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.2s ease;
+            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .radio-hero-banner:hover {
@@ -4026,6 +4028,84 @@
             margin: 0;
         }
 
+        /* --- VK SCROLL TO TOP STRIP (В стиле ВКонтакте "Наверх") --- */
+        .vk-scroll-top {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            width: 114px;
+            max-width: calc(50vw - 540px);
+            z-index: 95;
+            cursor: pointer;
+            box-sizing: border-box;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease, background-color 0.15s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        .vk-scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .vk-scroll-top:hover {
+            background-color: rgba(0, 0, 0, 0.045);
+        }
+
+        body.dark .vk-scroll-top:hover,
+        html.dark .vk-scroll-top:hover {
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .vk-scroll-top-inner {
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary, #828a99);
+            opacity: 0.65;
+            transition: color 0.15s ease, opacity 0.15s ease;
+        }
+
+        .vk-scroll-top:hover .vk-scroll-top-inner {
+            opacity: 1;
+            color: var(--text, #1d1d1f);
+        }
+
+        body.dark .vk-scroll-top:hover .vk-scroll-top-inner,
+        html.dark .vk-scroll-top:hover .vk-scroll-top-inner {
+            color: #ffffff;
+        }
+
+        .vk-scroll-arrow {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+        }
+
+        .vk-scroll-text {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1;
+            white-space: nowrap;
+            letter-spacing: -0.1px;
+            font-family: inherit;
+        }
+
+        @media (max-width: 1160px) {
+            .vk-scroll-top {
+                display: none !important;
+            }
+        }
+
         /* --- VK HEADER & TOP PLAYER BAR STYLES --- */
         .vk-header {
             background-color: var(--card-bg, #ffffff);
@@ -5066,6 +5146,17 @@
         </header>
     </div>
 
+    <!-- VK Scroll To Top Strip (Слева под шапкой в стиле ВКонтакте) -->
+    <div id="vk-scroll-top" class="vk-scroll-top" title="Наверх" role="button" tabindex="0" aria-label="Наверх">
+        <div class="vk-scroll-top-inner">
+            <svg id="vk-scroll-arrow" class="vk-scroll-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+            <span id="vk-scroll-text" class="vk-scroll-text">Наверх</span>
+        </div>
+    </div>
+
     <div class="app-layout">
         <aside id="sidebar-container" class="vk-sidebar-container">
             <nav class="vk-sidebar-nav sidebar-menu">
@@ -5901,10 +5992,10 @@
                             </div>
                         </div>
 
-                        <!-- Для вас -->
+                        <!-- Вы давно не слушали -->
                         <div class="vk-block-card">
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Для вас</h3>
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Вы давно не слушали</h3>
                                 <div style="display: flex; gap: 8px;">
                                     <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -5914,58 +6005,8 @@
                                     </button>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
-                                <!-- Card 1 -->
-                                <div class="editorial-card" onclick="window.location.hash='#playlists'">
-                                    <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
-                                    <div class="editorial-card-overlay"></div>
-                                    <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
-                                        <div>
-                                            <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">ДЛЯ ВАС</span>
-                                            <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Вечерний микс</h4>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                                            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Идеальные треки, чтобы замедлиться после насыщенного дня.</p>
-                                            <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Вечерний микс')">
-                                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Card 2 -->
-                                <div class="editorial-card" onclick="window.location.hash='#playlists'">
-                                    <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
-                                    <div class="editorial-card-overlay"></div>
-                                    <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
-                                        <div>
-                                            <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">ФОКУС</span>
-                                            <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Музыка для концентрации</h4>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                                            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Атмосферный эмбиент и неоклассика для работы и учебы.</p>
-                                            <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Концентрация')">
-                                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Card 3 -->
-                                <div class="editorial-card" onclick="window.location.hash='#playlists'">
-                                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
-                                    <div class="editorial-card-overlay"></div>
-                                    <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
-                                        <div>
-                                            <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">РЕКОМЕНДАЦИЯ</span>
-                                            <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Новинки для вас</h4>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                                            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Персональный дайджест самых интересных свежих музыкальных релизов.</p>
-                                            <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Новинки')">
-                                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div id="home-long-time-no-listen-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
                             </div>
                         </div>
                     </div>
@@ -10968,13 +11009,15 @@
                 refreshRadioFavorites();
                 const addedContainer = document.getElementById('home-recently-added-container');
                 const playedContainer = document.getElementById('home-recently-played-container');
+                const forgottenContainer = document.getElementById('home-long-time-no-listen-container');
 
-                if (!addedContainer && !playedContainer) return;
+                if (!addedContainer && !playedContainer && !forgottenContainer) return;
 
                 if (!window.currentUser) {
                     const notLoggedInHtml = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Войдите в аккаунт, чтобы увидеть ваши плейлисты и альбомы</div>`;
                     if (addedContainer) addedContainer.innerHTML = notLoggedInHtml;
                     if (playedContainer) playedContainer.innerHTML = notLoggedInHtml;
+                    if (forgottenContainer) forgottenContainer.innerHTML = notLoggedInHtml;
                     return;
                 }
 
@@ -11027,6 +11070,7 @@
                     const emptyHtml = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">У вас пока нет треков, плейлистов и альбомов</div>`;
                     if (addedContainer) addedContainer.innerHTML = emptyHtml;
                     if (playedContainer) playedContainer.innerHTML = emptyHtml;
+                    if (forgottenContainer) forgottenContainer.innerHTML = emptyHtml;
                     return;
                 }
 
@@ -11061,6 +11105,73 @@
                             return timeB - timeA;
                         }).slice(0, 15);
                         playedContainer.innerHTML = sortedPlayed.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
+                    }
+                }
+
+                // 3. Вы давно не слушали (15 рандомных треков, которые давно не были прослушаны по дате)
+                if (forgottenContainer) {
+                    const allSongCandidates = [
+                        ...songs.map(s => ({
+                            type: 'song',
+                            id: s.id,
+                            name: s.title,
+                            artistName: s.artistName,
+                            coverUrl: s.coverUrl || s.thumbnail || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                            createdAt: (s.createdAt || s.created_at || s.addedAt) ? new Date(s.createdAt || s.created_at || s.addedAt) : new Date(0),
+                            lastPlayedAt: (s.last_played_at || s.lastPlayedAt) ? new Date(s.last_played_at || s.lastPlayedAt) : null
+                        })),
+                        ...newSongs.map(s => ({
+                            type: 'song',
+                            id: s.id,
+                            name: s.title,
+                            artistName: s.artistName,
+                            coverUrl: s.coverUrl || s.thumbnail || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                            createdAt: null,
+                            lastPlayedAt: (s.last_played_at || s.lastPlayedAt) ? new Date(s.last_played_at || s.lastPlayedAt) : null
+                        }))
+                    ];
+
+                    if (allSongCandidates.length === 0) {
+                        forgottenContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">У вас пока нет треков в медиатеке</div>`;
+                    } else {
+                        // Исключаем самые свежие по прослушиванию треки (до 15 недавно воспроизведённых)
+                        const recentCutoffCount = Math.min(15, Math.floor(allSongCandidates.length * 0.4));
+                        const recentIds = new Set(
+                            allSongCandidates
+                                .filter(s => s.lastPlayedAt && !isNaN(s.lastPlayedAt.getTime()))
+                                .sort((a, b) => b.lastPlayedAt.getTime() - a.lastPlayedAt.getTime())
+                                .slice(0, recentCutoffCount)
+                                .map(s => s.id)
+                        );
+
+                        // Кандидаты: треки, которые давно не прослушивались по дате или ещё не слушались
+                        let longAgoCandidates = allSongCandidates.filter(s => !recentIds.has(s.id));
+                        if (longAgoCandidates.length === 0) {
+                            longAgoCandidates = [...allSongCandidates];
+                        }
+
+                        // Сортируем: сначала те, у которых дата последнего воспроизведения самая давняя, затем по дате добавления
+                        longAgoCandidates.sort((a, b) => {
+                            const timeA = a.lastPlayedAt ? a.lastPlayedAt.getTime() : 0;
+                            const timeB = b.lastPlayedAt ? b.lastPlayedAt.getTime() : 0;
+                            if (timeA !== timeB) return timeA - timeB;
+                            const createdA = a.createdAt ? a.createdAt.getTime() : 0;
+                            const createdB = b.createdAt ? b.createdAt.getTime() : 0;
+                            return createdA - createdB;
+                        });
+
+                        // Берём пул давних треков (до 45) и случайно выбираем из них 15
+                        const samplePoolSize = Math.max(15, Math.min(longAgoCandidates.length, 45));
+                        const samplePool = longAgoCandidates.slice(0, samplePoolSize);
+
+                        // Перемешиваем случайным образом
+                        for (let i = samplePool.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [samplePool[i], samplePool[j]] = [samplePool[j], samplePool[i]];
+                        }
+
+                        const selected15 = samplePool.slice(0, 15);
+                        forgottenContainer.innerHTML = selected15.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
                     }
                 }
             } catch (err) {
@@ -11599,7 +11710,6 @@
                     chevronBtn.setAttribute('data-tooltip', 'Свернуть проигрыватель');
                 }
                 setTimeout(() => {
-                    scrollToActiveQueueTrack(false);
                 }, 40);
                 setTimeout(() => {
                     scrollToActiveQueueTrack(true);
@@ -11629,6 +11739,7 @@
         }
 
         function closeAddAlbumModal() {
+...[truncated for diff preview]
             const modal = document.getElementById('addAlbumModal');
             if (modal) modal.classList.remove('active');
             resetImportModal();
@@ -16404,6 +16515,115 @@
         </div>
     </div>
 
+    <!-- VK Scroll To Top Script -->
+    <script>
+        (function () {
+            const scrollBtn = document.getElementById('vk-scroll-top');
+            const scrollText = document.getElementById('vk-scroll-text');
+            const scrollArrow = document.getElementById('vk-scroll-arrow');
+            if (!scrollBtn || !scrollText || !scrollArrow) return;
+
+            let savedScrollY = 0;
+            let isAtTopReturn = false;
+            let isProgrammaticScroll = false;
+            let scrollTimer = null;
+
+            function getScrollY() {
+                return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            }
+
+            function setArrow(dir) {
+                if (dir === 'down') {
+                    scrollArrow.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+                    scrollText.textContent = '';
+                    scrollBtn.setAttribute('title', 'Назад');
+                    scrollBtn.setAttribute('aria-label', 'Назад');
+                } else {
+                    scrollArrow.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
+                    scrollText.textContent = 'Наверх';
+                    scrollBtn.setAttribute('title', 'Наверх');
+                    scrollBtn.setAttribute('aria-label', 'Наверх');
+                }
+            }
+
+            function checkScroll() {
+                if (isProgrammaticScroll) return;
+                const y = getScrollY();
+
+                if (y > 150) {
+                    isAtTopReturn = false;
+                    setArrow('up');
+                    scrollBtn.classList.add('visible');
+                } else {
+                    if (!isAtTopReturn) {
+                        scrollBtn.classList.remove('visible');
+                        savedScrollY = 0;
+                    }
+                }
+            }
+
+            function instantScrollTo(targetY) {
+                isProgrammaticScroll = true;
+                clearTimeout(scrollTimer);
+
+                try {
+                    window.scrollTo({ top: targetY, behavior: 'instant' });
+                } catch (err) {
+                    window.scrollTo(0, targetY);
+                }
+                document.documentElement.scrollTop = targetY;
+                document.body.scrollTop = targetY;
+
+                scrollTimer = setTimeout(() => {
+                    isProgrammaticScroll = false;
+                    checkScroll();
+                }, 40);
+            }
+
+            scrollBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentY = getScrollY();
+
+                if (isAtTopReturn && savedScrollY > 0) {
+                    const target = savedScrollY;
+                    isAtTopReturn = false;
+                    setArrow('up');
+                    instantScrollTo(target);
+                    savedScrollY = 0;
+                } else {
+                    savedScrollY = currentY;
+                    isAtTopReturn = true;
+                    setArrow('down');
+                    instantScrollTo(0);
+                }
+            });
+
+            // Keyboard accessibility
+            scrollBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    scrollBtn.click();
+                }
+            });
+
+            window.addEventListener('scroll', checkScroll, { passive: true });
+            document.addEventListener('scroll', checkScroll, { passive: true });
+            document.body.addEventListener('scroll', checkScroll, { passive: true });
+
+            // Cancel return mode if user manually scrolls down via wheel
+            window.addEventListener('wheel', (e) => {
+                if (isAtTopReturn && e.deltaY > 0) {
+                    isAtTopReturn = false;
+                    savedScrollY = 0;
+                    setArrow('up');
+                    checkScroll();
+                }
+            }, { passive: true });
+
+            // Initial check
+            checkScroll();
+        })();
+    </script>
 </body>
 
 </html>
